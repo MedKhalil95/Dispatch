@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daily Dispatch — Delegation</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar__brand">
+    <span class="mark">DAILY DISPATCH</span>
+    <h1 data-i18n="delegation_heading">Your drivers</h1>
+  </div>
+  <div class="topbar__user">
+    <select class="lang-select" id="lang-select" aria-label="Language">
+      <option value="en">English</option>
+      <option value="fr">Français</option>
+      <option value="ar">العربية</option>
+    </select>
+    <span class="live-pill" id="live-pill"><span class="dot"></span><span id="live-text" data-i18n="connecting">connecting</span></span>
+    <span><span class="signed-in-label" data-i18n="signed_in_as">Signed in as</span> <strong dir="auto">{{ user.display_name }}</strong></span>
+    <a class="btn-logout" href="{{ url_for('logout') }}" data-i18n="sign_out">Sign out</a>
+  </div>
+</header>
+
+<main class="page">
+  <div class="panel" style="margin-bottom:24px;">
+    <h2><span data-i18n="live_map_heading">Live map</span> <span style="font-weight:400;font-size:11px;color:var(--text-dim);" data-i18n="delegation_map_subtitle">where your driver is right now</span></h2>
+    <div id="live-map"></div>
+  </div>
+
+  <div class="board-wrap">
+    <div class="board-head">
+      <h2 data-i18n="delegation_board_heading">Today's pickups</h2>
+      <input type="date" id="board-date" class="date-input" value="{{ today }}">
+    </div>
+    <div class="board-scroll">
+    <table class="board">
+      <thead>
+        <tr>
+          <th data-i18n="th_employee">Employee</th>
+          <th data-i18n="th_person">Person</th>
+          <th data-i18n="th_route">Route</th>
+          <th data-i18n="th_time">Time</th>
+          <th data-i18n="th_status">Status</th>
+          <th data-i18n="th_updated">Updated</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="board-body">
+        <tr><td colspan="7" class="empty-state" data-i18n="board_loading">Loading…</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>window.APP_USER = {{ user | tojson }};</script>
+<script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+<script src="{{ url_for('static', filename='js/common.js') }}"></script>
+<script src="{{ url_for('static', filename='js/delegation.js') }}"></script>
+</body>
+</html>

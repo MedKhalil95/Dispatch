@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2019",
+    "lib": [
+      "ES2019",
+      "DOM"
+    ],
+    "module": "none",
+    "outDir": "Static/js",
+    "rootDir": "Static/ts",
+    "strict": true,
+    "noImplicitAny": false,
+    "sourceMap": false,
+    "removeComments": true
+  },
+  "include": [
+    "Static/ts/**/*.ts"
+  ]
+}

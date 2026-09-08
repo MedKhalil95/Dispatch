@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daily Dispatch — Manager</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar__brand">
+    <span class="mark">DAILY DISPATCH</span>
+    <h1 data-i18n="manager_heading">Manager board</h1>
+  </div>
+  <div class="topbar__user">
+    <select class="lang-select" id="lang-select" aria-label="Language">
+      <option value="en">English</option>
+      <option value="fr">Français</option>
+      <option value="ar">العربية</option>
+    </select>
+    <span class="live-pill" id="live-pill"><span class="dot"></span><span id="live-text" data-i18n="connecting">connecting</span></span>
+    <span><span class="signed-in-label" data-i18n="signed_in_as">Signed in as</span> <strong>{{ user.display_name }}</strong></span>
+    <a class="btn-logout" href="{{ url_for('logout') }}" data-i18n="sign_out">Sign out</a>
+  </div>
+</header>
+
+<main class="page">
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="assign" data-i18n="tab_assign">Assign tasks</button>
+    <button class="tab-btn" data-tab="locations" data-i18n="tab_locations">Locations</button>
+  </div>
+
+  <section id="tab-assign">
+    <div class="panel" style="margin-bottom:24px;">
+      <h2><span data-i18n="live_map_heading">Live map</span> <span style="font-weight:400;font-size:11px;color:var(--text-dim);" data-i18n="live_map_subtitle">employee locations &amp; travel planning</span></h2>
+      <div class="pick-mode-bar">
+        <span class="pick-hint" data-i18n="pick_hint">Click a location pin on the map to set it as:</span>
+        <button type="button" class="pick-mode-btn mode-from active" data-mode="from">● <span data-i18n="pick_from">Pickup (From)</span></button>
+        <button type="button" class="pick-mode-btn mode-to" data-mode="to">● <span data-i18n="pick_to">Drop-off (To)</span></button>
+      </div>
+      <div class="live-map-grid">
+        <div id="live-map"></div>
+        <ul class="employee-roster" id="employee-roster"></ul>
+      </div>
+    </div>
+
+    <div class="manager-grid">
+      <div class="panel">
+        <h2 data-i18n="new_task_heading">New task</h2>
+        <form id="task-form">
+          <div class="field">
+            <label for="f-employee" data-i18n="employee_label">Employee</label>
+            <select id="f-employee" required>
+              <option value="" disabled selected data-i18n="employee_placeholder">Choose an employee…</option>
+              {% for username, name in employees.items() %}
+                <option value="{{ username }}">{{ name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="f-person" data-i18n="person_label">Person to pick up</label>
+            <input id="f-person" type="text" data-i18n-placeholder="person_placeholder" placeholder="e.g. Amb. J. Dubois" required>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="f-from" data-i18n="from_label">From</label>
+              <select id="f-from" required></select>
+            </div>
+            <button type="button" class="swap-btn" id="swap-btn" data-i18n-aria-label="swap_aria_label" aria-label="Swap from and to">⇄</button>
+            <div class="field">
+              <label for="f-to" data-i18n="to_label">To</label>
+              <select id="f-to" required></select>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="f-date" data-i18n="date_label">Date</label>
+              <input id="f-date" type="date" value="{{ today }}" required>
+            </div>
+            <div class="field">
+              <label for="f-time" data-i18n="time_label">Time</label>
+              <input id="f-time" type="time" required>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="f-notes" data-i18n="notes_label">Notes (optional)</label>
+            <input id="f-notes" type="text" data-i18n-placeholder="notes_placeholder" placeholder="Flight number, car, phone…">
+          </div>
+
+          <button class="btn-primary" type="submit" data-i18n="assign_button">Assign task</button>
+          <div class="form-msg" id="form-msg"></div>
+        </form>
+      </div>
+
+      <div class="board-wrap">
+        <div class="board-head">
+          <h2 data-i18n="board_heading">Today's board</h2>
+          <input type="date" id="board-date" class="date-input" value="{{ today }}">
+        </div>
+        <div class="board-scroll">
+        <table class="board">
+          <thead>
+            <tr>
+              <th data-i18n="th_employee">Employee</th>
+              <th data-i18n="th_person">Person</th>
+              <th data-i18n="th_route">Route</th>
+              <th data-i18n="th_time">Time</th>
+              <th data-i18n="th_status">Status</th>
+              <th data-i18n="th_updated">Updated</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="board-body">
+            <tr><td colspan="7" class="empty-state" data-i18n="board_loading">Loading…</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-locations" style="display:none;">
+    <div class="manager-grid">
+      <div class="panel">
+        <h2 data-i18n="locations_add_heading">Add a location</h2>
+        <div id="map-picker"></div>
+        <div class="field">
+          <label for="loc-name" data-i18n="name_label">Name</label>
+          <input id="loc-name" type="text" data-i18n-placeholder="name_placeholder" placeholder="e.g. Ramada Tunis">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="loc-lat" data-i18n="lat_label">Latitude</label>
+            <input id="loc-lat" type="text" readonly>
+          </div>
+          <div class="field">
+            <label for="loc-lng" data-i18n="lng_label">Longitude</label>
+            <input id="loc-lng" type="text" readonly>
+          </div>
+        </div>
+        <button class="btn-primary" id="loc-save-btn" type="button" data-i18n="save_location_button">Save location</button>
+        <div class="form-msg" id="loc-msg"></div>
+        <p style="font-size:12px;color:var(--text-dim);margin-top:10px;" data-i18n="locations_hint">
+          Click anywhere on the map to drop a pin, then save. New locations
+          show up in the From/To lists immediately for everyone.
+        </p>
+      </div>
+      <div class="panel">
+        <h2 data-i18n="all_locations_heading">All locations</h2>
+        <ul class="loc-list" id="loc-list"></ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>window.APP_USER = {{ user | tojson }};</script>
+<script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+<script src="{{ url_for('static', filename='js/common.js') }}"></script>
+<script src="{{ url_for('static', filename='js/manager.js') }}"></script>
+</body>
+</html>

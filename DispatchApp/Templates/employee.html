@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daily Dispatch — {{ user.display_name }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar__brand">
+    <span class="mark">DAILY DISPATCH</span>
+    <h1 data-i18n="my_tasks_heading">My tasks</h1>
+  </div>
+  <div class="topbar__user">
+    <select class="lang-select" id="lang-select" aria-label="Language">
+      <option value="en">English</option>
+      <option value="fr">Français</option>
+      <option value="ar">العربية</option>
+    </select>
+    <span class="live-pill" id="live-pill"><span class="dot"></span><span id="live-text" data-i18n="connecting">connecting</span></span>
+    <span dir="auto"><strong>{{ user.display_name }}</strong></span>
+    <a class="btn-logout" href="{{ url_for('logout') }}" data-i18n="sign_out">Sign out</a>
+  </div>
+</header>
+
+<main class="page" style="max-width:640px;">
+  <div class="employee-header">
+    <h2 id="date-heading">Today</h2>
+    <p data-i18n="employee_subtitle">Updates the moment the manager assigns or changes something — no need to refresh.</p>
+  </div>
+
+  <div class="location-perm-banner" id="location-banner" style="display:none;">
+    <span id="location-banner-text" data-i18n="location_banner_text">Share your live location so dispatch can see where you are.</span>
+    <button type="button" id="location-banner-btn" data-i18n="location_banner_enable">Enable</button>
+  </div>
+
+  <div class="card-stack" id="card-stack">
+    <div class="empty-state" data-i18n="board_loading">Loading…</div>
+  </div>
+</main>
+
+<div class="modal-overlay" id="location-modal">
+  <div class="modal-panel">
+    <span class="mark" data-i18n="app_name">DAILY DISPATCH</span>
+    <h2 data-i18n="location_modal_title">Share your location?</h2>
+    <p data-i18n="location_modal_body">Turn on live location so dispatch can see where you are, and so you can see how far you are from your next pickup.</p>
+    <div class="modal-actions">
+      <button type="button" class="modal-btn-secondary" id="location-modal-later" data-i18n="location_modal_later">Not now</button>
+      <button type="button" class="btn-primary" id="location-modal-activate" data-i18n="location_modal_activate">Activate</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>window.APP_USER = {{ user | tojson }};</script>
+<script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+<script src="{{ url_for('static', filename='js/common.js') }}"></script>
+<script src="{{ url_for('static', filename='js/employee.js') }}"></script>
+</body>
+</html>

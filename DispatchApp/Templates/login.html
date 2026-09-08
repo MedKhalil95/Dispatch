@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daily Dispatch — Sign in</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="login-wrap">
+  <div class="login-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <span class="mark">DAILY DISPATCH</span>
+      <select class="lang-select" id="lang-select" aria-label="Language">
+        <option value="en">English</option>
+        <option value="fr">Français</option>
+        <option value="ar">العربية</option>
+      </select>
+    </div>
+    <h1 data-i18n="login_title">Sign in</h1>
+
+    {% if error %}
+      <div class="login-error" data-i18n="login_error_generic">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('login') }}">
+      <div class="field">
+        <label for="username" data-i18n="username_label">Username</label>
+        <input id="username" name="username" type="text" autocomplete="username" autofocus required>
+      </div>
+      <div class="field">
+        <label for="password" data-i18n="password_label">Password</label>
+        <div class="password-field">
+          <input id="password" name="password" type="password" autocomplete="current-password" required>
+          <button type="button" class="pw-toggle" id="pw-toggle" data-i18n-aria-label="show_password" aria-label="Show password" aria-pressed="false">
+            <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12Z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19.5c-7 0-10.5-7-10.5-7a19.3 19.3 0 0 1 4.22-5.17M9.9 4.72A10.4 10.4 0 0 1 12 4.5c7 0 10.5 7 10.5 7a19.4 19.4 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
+              <path d="M1 1l22 22"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <button class="btn-primary" type="submit" data-i18n="sign_in_button">Sign in</button>
+    </form>
+
+    <div class="login-hint" data-i18n="login_hint">
+      Manager and employee accounts are set up by whoever manages this app.
+      If you don't have a username and password yet, ask them.
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+<script src="{{ url_for('static', filename='js/login.js') }}"></script>
+</body>
+</html>
