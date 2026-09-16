@@ -20,7 +20,8 @@ public static class SeedData
         new UserAccount { Username = "sadok", Password = "Sadok@123", Role = "employee", DisplayName = "الصادق", Phone = "+216 20 000 005" },
         new UserAccount { Username = "belgacem", Password = "Belgacem@123", Role = "employee", DisplayName = "بلڤاسم", Phone = "+216 20 000 006" },
         new UserAccount { Username = "hosni", Password = "Hosni@123", Role = "employee", DisplayName = "حسني", Phone = "+216 20 000 007" },
-        new UserAccount { Username = "hicham", Password = "Hicham@123", Role = "employee", DisplayName = "هشام", Phone = "+216 20 000 008" },
+        new UserAccount { Username = "moez", Password = "Moez@123", Role = "employee", DisplayName = "معز", Phone = "+216 20 000 008" },
+        new UserAccount { Username = "nizar", Password = "Nizar@123", Role = "employee", DisplayName = "نزار", Phone = "+216 20 000 009" },
         new UserAccount { Username = "delegation", Password = "Delegation@2026", Role = "delegation", DisplayName = "الوفد الدبلوماسي", Phone = "" },
     };
 
