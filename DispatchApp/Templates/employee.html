@@ -28,7 +28,10 @@
 
 <main class="page" style="max-width:640px;">
   <div class="employee-header">
-    <h2 id="date-heading">Today</h2>
+    <div class="employee-header__top">
+      <h2 id="date-heading">Today</h2>
+      <input type="date" id="board-date" class="date-input" value="{{ today }}" data-i18n-aria-label="date_label" aria-label="Date">
+    </div>
     <p data-i18n="employee_subtitle">Updates the moment the manager assigns or changes something — no need to refresh.</p>
   </div>
 

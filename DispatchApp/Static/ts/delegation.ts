@@ -8,6 +8,7 @@ let delegEmployeesState: Record<string, EmployeeLocationRecord> = {};
 const delegEmployeeMarkers: Record<string, any> = {};
 let delegLiveMap: any = null;
 let delegEmployeeOrder: string[] = [];
+let delegLocations: LocationRecord[] = [];
 
 function delegEmployeeDivIcon(online: boolean): any {
   return L.divIcon({
@@ -98,6 +99,39 @@ function delegInitLiveMap() {
   }).addTo(delegLiveMap);
 }
 
+// ------------------------------------------------------ destination filter
+
+async function delegLoadLocations() {
+  delegLocations = await fetchJSON<LocationRecord[]>("/api/locations");
+  delegRenderDestinationOptions();
+}
+
+function delegRenderDestinationOptions() {
+  const select = document.getElementById("destination-filter") as HTMLSelectElement | null;
+  if (!select) return;
+  const prev = select.value;
+  const options = delegLocations
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((l) => `<option value="${delegEscapeHtml(l.name)}">${delegEscapeHtml(l.name)}</option>`)
+    .join("");
+  select.innerHTML = `<option value="" data-i18n="location_filter_all">${t("location_filter_all")}</option>${options}`;
+  select.value = prev; // no-op (empty) if prev no longer exists
+}
+
+// Matches a task against the active location filter on EITHER end of the
+// route — a route "CMAI → Golden Tulip" should still show up whichever of
+// the two the delegation filters by, not just the destination.
+function delegTaskMatchesLocationFilter(task: TaskRecord): boolean {
+  const filter = delegSelectedDestination();
+  if (!filter) return true;
+  return task.from_location === filter || task.to_location === filter;
+}
+
+function delegSelectedDestination(): string {
+  return (document.getElementById("destination-filter") as HTMLSelectElement | null)?.value || "";
+}
+
 // ---------------------------------------------------------------- board --
 
 function delegStatusTagHtml(status: TaskStatus): string {
@@ -142,7 +176,9 @@ async function delegLoadBoard() {
   body.innerHTML = `<tr><td colspan="7" class="empty-state">${t("board_loading")}</td></tr>`;
   Object.keys(delegRowsById).forEach((k) => delete delegRowsById[+k]);
 
-  const tasks = await fetchJSON<TaskRecord[]>(`/api/tasks?date=${delegCurrentBoardDate()}`);
+  const allTasks = await fetchJSON<TaskRecord[]>(`/api/tasks?date=${delegCurrentBoardDate()}`);
+  const tasks = allTasks.filter(delegTaskMatchesLocationFilter);
+
   if (tasks.length === 0) {
     delegRenderEmptyBoard();
     return;
@@ -156,6 +192,12 @@ async function delegLoadBoard() {
 
 function delegUpsertRow(task: TaskRecord) {
   if (task.task_date !== delegCurrentBoardDate()) return;
+
+  if (!delegTaskMatchesLocationFilter(task)) {
+    delegRemoveRow(task.id); // e.g. a task's route just changed away from the active filter
+    return;
+  }
+
   const body = document.getElementById("board-body") as HTMLTableSectionElement;
   if (body.querySelector(".empty-state")) body.innerHTML = "";
 
@@ -201,6 +243,7 @@ function delegSetupTable() {
     }
   });
   (document.getElementById("board-date") as HTMLInputElement).addEventListener("change", delegLoadBoard);
+  (document.getElementById("destination-filter") as HTMLSelectElement).addEventListener("change", delegLoadBoard);
 }
 
 // ------------------------------------------------------------- init ------
@@ -208,6 +251,7 @@ function delegSetupTable() {
 async function initDelegation() {
   delegSetupTable();
   delegInitLiveMap();
+  await delegLoadLocations();
   await delegLoadEmployeeLocations();
   await delegLoadBoard();
 
@@ -216,10 +260,17 @@ async function initDelegation() {
   socket.on("task_updated", delegUpsertRow);
   socket.on("task_deleted", (payload: { id: number }) => delegRemoveRow(payload.id));
   socket.on("employee_location_updated", (emp: EmployeeLocationRecord) => delegUpsertEmployeeMarker(emp));
+  socket.on("locations_changed", (loc: LocationRecord) => {
+    if (!delegLocations.find((l) => l.id === loc.id)) {
+      delegLocations.push(loc);
+      delegRenderDestinationOptions();
+    }
+  });
 
   setInterval(delegTickRelativeTimes, 30000);
 
   window.addEventListener("langchange", () => {
+    delegRenderDestinationOptions();
     delegLoadBoard();
     Object.values(delegEmployeesState).forEach((emp) => delegUpsertEmployeeMarker(emp));
   });

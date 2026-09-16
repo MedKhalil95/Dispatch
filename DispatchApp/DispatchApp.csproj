@@ -5,6 +5,9 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <InvariantGlobalization>false</InvariantGlobalization>
+    <!-- Run on whatever .NET major version is actually installed (e.g. 9.x)
+         instead of requiring an exact .NET 8 runtime alongside it. -->
+    <RollForward>Major</RollForward>
   </PropertyGroup>
 
   <ItemGroup>

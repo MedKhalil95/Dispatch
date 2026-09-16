@@ -60,6 +60,18 @@ installed SDK and runtime are mismatched — check `dotnet --list-sdks`
 and `dotnet --list-runtimes` both report a matching 8.0.x, and that
 `dotnet nuget list source` shows nuget.org enabled.
 
+**If it builds fine but fails to *launch* with "You must install or
+update .NET" / a `Framework: 'Microsoft.AspNetCore.App', version
+'8.0.0'` mismatch:** this means only a newer major version (e.g. 9.x)
+is installed, not 8.x. Both `.csproj` files already set
+`<RollForward>Major</RollForward>`, which tells the app to run on
+whatever major .NET version is actually present instead of demanding
+exactly 8.0.0 — so this shouldn't happen with the version of the
+project in this zip. If you're troubleshooting an older copy, add that
+line to the `<PropertyGroup>` in both `.csproj` files, or simply
+install the .NET 8 ASP.NET Core Runtime (the failure message includes
+a direct download link for that).
+
 ### 1. No database — a JSON-file-backed store instead of EF Core/SQLite
 
 The original Flask app used SQLAlchemy + SQLite. Without NuGet, there's
@@ -118,6 +130,20 @@ view-only server-side, exactly as before).
 manager's New Task form (`#f-time`), stored as `task_time` on each task
 and shown in the manager's board, the delegation's table, and on the
 employee's own task cards.
+
+**Also new:** the employee dashboard now has its own day picker
+(defaults to today, same `#board-date` pattern as the manager and
+delegation boards) — employees can look ahead or back to any day's
+duties, not just today's. And the delegation dashboard has a location
+filter: a dropdown listing every saved location (every hotel, the
+airport, and CMAI Tunisia) sourced from the same `/api/locations` list
+the manager uses. It matches a route on **either end** — filtering by
+"CMAI Tunisia (Agency)" shows every route that starts *or* ends there,
+not just ones ending there, so a CMAI → hotel leg doesn't disappear
+just because CMAI is the origin rather than the destination. Both are
+plain client-side additions — no new endpoints were needed, since
+`/api/tasks?date=...` already existed for the day filter, and the
+location filter runs against data already being fetched.
 
 ## Running it
 

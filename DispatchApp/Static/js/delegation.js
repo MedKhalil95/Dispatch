@@ -3,6 +3,7 @@ let delegEmployeesState = {};
 const delegEmployeeMarkers = {};
 let delegLiveMap = null;
 let delegEmployeeOrder = [];
+let delegLocations = [];
 function delegEmployeeDivIcon(online) {
     return L.divIcon({
         className: "",
@@ -82,6 +83,33 @@ function delegInitLiveMap() {
         attribution: "© OpenStreetMap contributors",
     }).addTo(delegLiveMap);
 }
+async function delegLoadLocations() {
+    delegLocations = await fetchJSON("/api/locations");
+    delegRenderDestinationOptions();
+}
+function delegRenderDestinationOptions() {
+    const select = document.getElementById("destination-filter");
+    if (!select)
+        return;
+    const prev = select.value;
+    const options = delegLocations
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map((l) => `<option value="${delegEscapeHtml(l.name)}">${delegEscapeHtml(l.name)}</option>`)
+        .join("");
+    select.innerHTML = `<option value="" data-i18n="location_filter_all">${t("location_filter_all")}</option>${options}`;
+    select.value = prev;
+}
+function delegTaskMatchesLocationFilter(task) {
+    const filter = delegSelectedDestination();
+    if (!filter)
+        return true;
+    return task.from_location === filter || task.to_location === filter;
+}
+function delegSelectedDestination() {
+    var _a;
+    return ((_a = document.getElementById("destination-filter")) === null || _a === void 0 ? void 0 : _a.value) || "";
+}
 function delegStatusTagHtml(status) {
     return `<span class="status-tag status-${status}">${statusLabel(status)}</span>`;
 }
@@ -118,7 +146,8 @@ async function delegLoadBoard() {
     const body = document.getElementById("board-body");
     body.innerHTML = `<tr><td colspan="7" class="empty-state">${t("board_loading")}</td></tr>`;
     Object.keys(delegRowsById).forEach((k) => delete delegRowsById[+k]);
-    const tasks = await fetchJSON(`/api/tasks?date=${delegCurrentBoardDate()}`);
+    const allTasks = await fetchJSON(`/api/tasks?date=${delegCurrentBoardDate()}`);
+    const tasks = allTasks.filter(delegTaskMatchesLocationFilter);
     if (tasks.length === 0) {
         delegRenderEmptyBoard();
         return;
@@ -133,6 +162,10 @@ async function delegLoadBoard() {
 function delegUpsertRow(task) {
     if (task.task_date !== delegCurrentBoardDate())
         return;
+    if (!delegTaskMatchesLocationFilter(task)) {
+        delegRemoveRow(task.id);
+        return;
+    }
     const body = document.getElementById("board-body");
     if (body.querySelector(".empty-state"))
         body.innerHTML = "";
@@ -178,10 +211,12 @@ function delegSetupTable() {
         }
     });
     document.getElementById("board-date").addEventListener("change", delegLoadBoard);
+    document.getElementById("destination-filter").addEventListener("change", delegLoadBoard);
 }
 async function initDelegation() {
     delegSetupTable();
     delegInitLiveMap();
+    await delegLoadLocations();
     await delegLoadEmployeeLocations();
     await delegLoadBoard();
     const socket = connectSocket();
@@ -189,8 +224,15 @@ async function initDelegation() {
     socket.on("task_updated", delegUpsertRow);
     socket.on("task_deleted", (payload) => delegRemoveRow(payload.id));
     socket.on("employee_location_updated", (emp) => delegUpsertEmployeeMarker(emp));
+    socket.on("locations_changed", (loc) => {
+        if (!delegLocations.find((l) => l.id === loc.id)) {
+            delegLocations.push(loc);
+            delegRenderDestinationOptions();
+        }
+    });
     setInterval(delegTickRelativeTimes, 30000);
     window.addEventListener("langchange", () => {
+        delegRenderDestinationOptions();
         delegLoadBoard();
         Object.values(delegEmployeesState).forEach((emp) => delegUpsertEmployeeMarker(emp));
     });

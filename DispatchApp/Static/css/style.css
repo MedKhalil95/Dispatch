@@ -400,6 +400,13 @@ a { color: inherit; }
 }
 .board-head h2 { margin: 0; }
 
+.board-head__controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .date-input {
   background: var(--board-bg);
   border: 1px solid var(--board-line);
@@ -531,11 +538,19 @@ a { color: inherit; }
 .employee-header {
   margin-bottom: 22px;
 }
+.employee-header__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
 .employee-header h2 {
   font-family: var(--font-display);
   text-transform: uppercase;
   font-size: 26px;
-  margin: 0 0 4px;
+  margin: 0;
   letter-spacing: 0.01em;
 }
 .employee-header p {

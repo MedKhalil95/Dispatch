@@ -6,6 +6,7 @@
       "DOM"
     ],
     "module": "none",
+    "ignoreDeprecations": "6.0",
     "outDir": "Static/js",
     "rootDir": "Static/ts",
     "strict": true,

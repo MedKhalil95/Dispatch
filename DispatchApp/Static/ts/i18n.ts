@@ -116,6 +116,8 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     delegation_board_heading: "Today's pickups",
     call_button: "Call",
     directions_button: "Directions",
+    location_filter_all: "All locations",
+    location_filter_label: "Filter by location",
   },
 
   fr: {
@@ -230,6 +232,8 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     delegation_board_heading: "Trajets du jour",
     call_button: "Appeler",
     directions_button: "Itinéraire",
+    location_filter_all: "Tous les lieux",
+    location_filter_label: "Filtrer par lieu",
   },
 
   ar: {
@@ -344,6 +348,8 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     delegation_board_heading: "رحلات اليوم",
     call_button: "اتصال",
     directions_button: "الاتجاهات",
+    location_filter_all: "كل المواقع",
+    location_filter_label: "التصفية حسب الموقع",
   },
 };
 

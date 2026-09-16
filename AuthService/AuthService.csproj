@@ -2,9 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <TargetLatestRuntimePatch>false</TargetLatestRuntimePatch>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Run on whatever .NET major version is actually installed (e.g. 9.x)
+         instead of requiring an exact .NET 8 runtime alongside it. -->
+    <RollForward>Major</RollForward>
   </PropertyGroup>
 
 </Project>

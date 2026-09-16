@@ -214,9 +214,14 @@ function renderEmpty() {
   stack.innerHTML = `<div class="empty-state">${t("empty_tasks")}</div>`;
 }
 
+function selectedDate(): string {
+  const input = document.getElementById("board-date") as HTMLInputElement | null;
+  return input?.value || todayISO();
+}
+
 async function loadMyTasks() {
   const stack = document.getElementById("card-stack") as HTMLDivElement;
-  const tasks = await fetchJSON<TaskRecord[]>(`/api/tasks?date=${todayISO()}`);
+  const tasks = await fetchJSON<TaskRecord[]>(`/api/tasks?date=${selectedDate()}`);
   Object.keys(cardsById).forEach((k) => delete cardsById[+k]);
   Object.keys(taskMaps).forEach((k) => destroyCardMap(Number(k)));
 
@@ -233,7 +238,7 @@ async function loadMyTasks() {
 }
 
 function handleCreated(task: TaskRecord) {
-  if (task.employee_username !== APP_USER.username || task.task_date !== todayISO()) return;
+  if (task.employee_username !== APP_USER.username || task.task_date !== selectedDate()) return;
   const stack = document.getElementById("card-stack") as HTMLDivElement;
   if (stack.querySelector(".empty-state")) stack.innerHTML = "";
   const card = buildCard(task);
@@ -242,7 +247,7 @@ function handleCreated(task: TaskRecord) {
 }
 
 function handleUpdated(task: TaskRecord) {
-  if (task.employee_username !== APP_USER.username || task.task_date !== todayISO()) return;
+  if (task.employee_username !== APP_USER.username || task.task_date !== selectedDate()) return;
   const card = cardsById[task.id];
   if (!card) {
     handleCreated(task);
@@ -309,11 +314,20 @@ function tickTimes() {
 
 function setDateHeading() {
   const heading = document.getElementById("date-heading") as HTMLElement;
-  const today = new Date();
-  heading.textContent = today.toLocaleDateString(localeTag(), {
+  const [y, m, d] = selectedDate().split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  heading.textContent = date.toLocaleDateString(localeTag(), {
     weekday: "long",
     month: "long",
     day: "numeric",
+  });
+}
+
+function setupDatePicker() {
+  const input = document.getElementById("board-date") as HTMLInputElement | null;
+  input?.addEventListener("change", () => {
+    setDateHeading();
+    loadMyTasks();
   });
 }
 
@@ -449,6 +463,7 @@ function setupLocationSharing() {
 async function initEmployee() {
   setDateHeading();
   setupActions();
+  setupDatePicker();
   setupLocationModal();
   setupLocationSharing();
   myLocations = await fetchJSON<LocationRecord[]>("/api/locations");

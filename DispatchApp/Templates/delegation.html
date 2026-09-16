@@ -35,7 +35,12 @@
   <div class="board-wrap">
     <div class="board-head">
       <h2 data-i18n="delegation_board_heading">Today's pickups</h2>
-      <input type="date" id="board-date" class="date-input" value="{{ today }}">
+      <div class="board-head__controls">
+        <select id="destination-filter" class="date-input" data-i18n-aria-label="location_filter_label" aria-label="Location">
+          <option value="" data-i18n="location_filter_all">All locations</option>
+        </select>
+        <input type="date" id="board-date" class="date-input" value="{{ today }}">
+      </div>
     </div>
     <div class="board-scroll">
     <table class="board">
