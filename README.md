@@ -72,6 +72,17 @@ line to the `<PropertyGroup>` in both `.csproj` files, or simply
 install the .NET 8 ASP.NET Core Runtime (the failure message includes
 a direct download link for that).
 
+**If a page seems to be missing a button, a translation, or any other
+recent change:** the browser almost certainly cached an older
+`manager.js`/`i18n.js`/etc. from a previous run on the same URL — do a
+hard refresh (Ctrl+Shift+R / Cmd+Shift+R), or open DevTools → Network
+tab → "Disable cache" while testing. Static assets are now served with
+`Cache-Control: no-cache, must-revalidate` (see `Program.cs`'s
+`UseStaticFiles` call) specifically so this stops happening — every
+load re-checks with the server instead of trusting a stale local copy.
+Before that fix landed, this was a real way to end up looking at
+old, broken JS while the actual files on disk were already correct.
+
 ### 1. No database — a JSON-file-backed store instead of EF Core/SQLite
 
 The original Flask app used SQLAlchemy + SQLite. Without NuGet, there's
@@ -144,6 +155,42 @@ just because CMAI is the origin rather than the destination. Both are
 plain client-side additions — no new endpoints were needed, since
 `/api/tasks?date=...` already existed for the day filter, and the
 location filter runs against data already being fetched.
+
+## What's new: GPS-backed place search for the manager
+
+Typing an exact match into the From/To dropdowns only ever worked for
+places already saved as a `Location` (the seeded hotels/airport/CMAI).
+The manager's **Locations** tab now has a proper search box above the
+map picker: type a place name (e.g. "The Residence Tunis"), press
+**Enter** or **Search**, and it looks the place up via
+[Nominatim](https://nominatim.openstreetmap.org) (OpenStreetMap's free
+geocoding search — the same map-tile provider this app already uses,
+so no new API key or paid service). Pick the right result from the
+list and its name and GPS coordinates fill the form automatically,
+with the map panning to show exactly where it landed — no more
+guessing where to click on the map. There's also a **"Can't find the
+place you need?"** link right on the New Task form's From/To row that
+jumps straight to this search box, so the manager doesn't have to go
+hunting for the Locations tab mid-task.
+
+Once saved, it's an ordinary `Location` like any other — it broadcasts
+over the existing realtime layer exactly like manually-pinned
+locations always have, so it shows up immediately in every employee's
+and the delegation's location lists too, with no extra plumbing needed.
+
+**One important constraint, deliberately respected:** Nominatim's
+usage policy explicitly forbids "search-as-you-type"/autocomplete
+against its public API — implementing that client-side is grounds for
+being banned from the service. So this is a one-shot search the
+manager explicitly triggers (Enter or the button), never fired
+automatically while typing, with a ~1.1s client-side cooldown to stay
+under the documented 1-request/second cap. Search is biased to Tunisia
+(`countrycodes=tn`) since every seeded location already is — drop that
+query parameter in `Static/ts/manager.ts`'s `searchPlaces()` if you
+ever need to search outside Tunisia. For heavier usage than a small
+internal team, consider self-hosting Nominatim or switching to a paid
+geocoding provider (Google Places, Mapbox, LocationIQ) instead of the
+public instance.
 
 ## Running it
 

@@ -466,6 +466,18 @@ function setupTabs() {
 let mapPicker: any = null;
 let pickerMarker: any = null;
 
+function setPickerPoint(lat: number, lng: number, panTo = false) {
+  (document.getElementById("loc-lat") as HTMLInputElement).value = lat.toFixed(6);
+  (document.getElementById("loc-lng") as HTMLInputElement).value = lng.toFixed(6);
+  const latlng = { lat, lng };
+  if (pickerMarker) {
+    pickerMarker.setLatLng(latlng);
+  } else {
+    pickerMarker = L.marker(latlng).addTo(mapPicker);
+  }
+  if (panTo) mapPicker.setView(latlng, 15);
+}
+
 function initMapPicker() {
   if (mapPicker) {
     mapPicker.invalidateSize();
@@ -476,15 +488,147 @@ function initMapPicker() {
     attribution: "© OpenStreetMap contributors",
   }).addTo(mapPicker);
 
-  mapPicker.on("click", (e: any) => {
-    const { lat, lng } = e.latlng;
-    (document.getElementById("loc-lat") as HTMLInputElement).value = lat.toFixed(6);
-    (document.getElementById("loc-lng") as HTMLInputElement).value = lng.toFixed(6);
-    if (pickerMarker) {
-      pickerMarker.setLatLng(e.latlng);
-    } else {
-      pickerMarker = L.marker(e.latlng).addTo(mapPicker);
+  mapPicker.on("click", (e: any) => setPickerPoint(e.latlng.lat, e.latlng.lng));
+}
+
+// ------------------------------------------------- GPS-backed place search
+//
+// IMPORTANT: Nominatim's usage policy explicitly forbids implementing
+// autocomplete/search-as-you-type against its public API client-side —
+// that's treated as abuse and can get the calling application banned
+// (https://operations.osmfoundation.org/policies/nominatim/). So this is
+// a deliberate, one-shot search the manager explicitly triggers (Enter or
+// the Search button) — never fired automatically while typing — plus a
+// cooldown afterwards to stay comfortably under the 1 request/second cap.
+
+interface GeocodeResult {
+  shortName: string;
+  displayName: string;
+  lat: number;
+  lng: number;
+}
+
+let geocodeRequestSeq = 0;
+let geocodeCooldownUntil = 0;
+
+async function searchPlaces(query: string): Promise<GeocodeResult[]> {
+  // Nominatim (OpenStreetMap) — free, no API key, same tile provider this
+  // app already uses for its maps. Biased to Tunisia since that's where
+  // every seeded location and hotel in this app already is; for a
+  // multi-country deployment, drop the countrycodes param.
+  const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=6&countrycodes=tn&q=${encodeURIComponent(query)}`;
+  const res = await fetch(url, { headers: { Accept: "application/json" } });
+  if (!res.ok) throw new Error(`Search failed (${res.status})`);
+  const data = await res.json();
+  return (data as any[]).map((item) => ({
+    shortName: item.name || item.display_name.split(",")[0],
+    displayName: item.display_name,
+    lat: parseFloat(item.lat),
+    lng: parseFloat(item.lon),
+  }));
+}
+
+function renderGeocodeResults(html: string) {
+  const list = document.getElementById("loc-search-results") as HTMLUListElement;
+  list.innerHTML = html;
+  list.classList.add("is-open");
+}
+
+function hideGeocodeResults() {
+  const list = document.getElementById("loc-search-results") as HTMLUListElement;
+  list.classList.remove("is-open");
+  list.innerHTML = "";
+}
+
+function applyGeocodeResult(result: GeocodeResult) {
+  const nameInput = document.getElementById("loc-name") as HTMLInputElement;
+  nameInput.value = result.shortName;
+  const searchInput = document.getElementById("loc-search") as HTMLInputElement;
+  searchInput.value = result.shortName;
+  initMapPicker(); // idempotent — in case the tab was just opened via the "can't find it" link
+  setPickerPoint(result.lat, result.lng, true);
+  hideGeocodeResults();
+  nameInput.focus();
+  nameInput.select();
+}
+
+async function triggerLocationSearch() {
+  const input = document.getElementById("loc-search") as HTMLInputElement;
+  const btn = document.getElementById("loc-search-btn") as HTMLButtonElement;
+  const query = input.value.trim();
+
+  if (query.length < 3) {
+    renderGeocodeResults(`<li class="no-results">${t("location_search_too_short")}</li>`);
+    return;
+  }
+
+  const now = Date.now();
+  if (now < geocodeCooldownUntil) {
+    renderGeocodeResults(`<li class="no-results">${t("location_search_wait")}</li>`);
+    return;
+  }
+
+  renderGeocodeResults(`<li class="is-loading">${t("location_search_searching")}</li>`);
+  btn.disabled = true;
+  const mySeq = ++geocodeRequestSeq;
+
+  try {
+    const results = await searchPlaces(query);
+    geocodeCooldownUntil = Date.now() + 1100; // stay under Nominatim's 1 req/sec cap
+    if (mySeq !== geocodeRequestSeq) return; // superseded by a newer search
+    if (results.length === 0) {
+      renderGeocodeResults(`<li class="no-results">${t("location_search_no_results")}</li>`);
+      return;
     }
+    const html = results
+      .map(
+        (r, i) => `
+        <li data-index="${i}">
+          <span class="result-name">${escapeHtml(r.shortName)}</span>
+          <span class="result-detail">${escapeHtml(r.displayName)}</span>
+        </li>`
+      )
+      .join("");
+    renderGeocodeResults(html);
+    const list = document.getElementById("loc-search-results") as HTMLUListElement;
+    list.querySelectorAll("li[data-index]").forEach((li) => {
+      li.addEventListener("click", () => applyGeocodeResult(results[Number((li as HTMLElement).dataset.index)]));
+    });
+  } catch {
+    geocodeCooldownUntil = Date.now() + 1100;
+    if (mySeq !== geocodeRequestSeq) return;
+    renderGeocodeResults(`<li class="no-results">${t("location_search_failed")}</li>`);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function setupLocationSearch() {
+  const input = document.getElementById("loc-search") as HTMLInputElement;
+  const btn = document.getElementById("loc-search-btn") as HTMLButtonElement;
+
+  btn.addEventListener("click", () => triggerLocationSearch());
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      triggerLocationSearch();
+    } else if (e.key === "Escape") {
+      hideGeocodeResults();
+    }
+  });
+
+  document.addEventListener("click", (e) => {
+    const wrap = document.querySelector(".location-search");
+    if (wrap && !wrap.contains(e.target as Node)) hideGeocodeResults();
+  });
+}
+
+function setupCantFindLocationLink() {
+  const btn = document.getElementById("cant-find-location-btn") as HTMLButtonElement | null;
+  btn?.addEventListener("click", () => {
+    const locationsTabBtn = document.querySelector<HTMLButtonElement>('.tab-btn[data-tab="locations"]');
+    locationsTabBtn?.click();
+    (document.getElementById("loc-search") as HTMLInputElement | null)?.focus();
   });
 }
 
@@ -513,6 +657,8 @@ function setupLocationForm() {
       (document.getElementById("loc-name") as HTMLInputElement).value = "";
       (document.getElementById("loc-lat") as HTMLInputElement).value = "";
       (document.getElementById("loc-lng") as HTMLInputElement).value = "";
+      (document.getElementById("loc-search") as HTMLInputElement).value = "";
+      hideGeocodeResults();
       if (pickerMarker) {
         mapPicker.removeLayer(pickerMarker);
         pickerMarker = null;
@@ -530,6 +676,8 @@ async function initManager() {
   setupForm();
   setupTabs();
   setupLocationForm();
+  setupLocationSearch();
+  setupCantFindLocationLink();
   setupPickModeButtons();
   initLiveMap();
   const timeInput = document.getElementById("f-time") as HTMLInputElement | null;

@@ -15,7 +15,6 @@ public static class SeedData
         new UserAccount { Username = "manager", Password = "Manager@2026", Role = "manager", DisplayName = "المدير", Phone = "" },
         new UserAccount { Username = "hossam", Password = "Hossam@123", Role = "employee", DisplayName = "حسام", Phone = "+216 20 000 001" },
         new UserAccount { Username = "mohamed", Password = "Mohamed@123", Role = "employee", DisplayName = "محمد", Phone = "+216 20 000 002" },
-        new UserAccount { Username = "khalil", Password = "Khalil@123", Role = "employee", DisplayName = "خليل", Phone = "+216 20 000 003" },
         new UserAccount { Username = "wajdi", Password = "Wajdi@123", Role = "employee", DisplayName = "وجدي", Phone = "+216 20 000 004" },
         new UserAccount { Username = "sadok", Password = "Sadok@123", Role = "employee", DisplayName = "الصادق", Phone = "+216 20 000 005" },
         new UserAccount { Username = "belgacem", Password = "Belgacem@123", Role = "employee", DisplayName = "بلڤاسم", Phone = "+216 20 000 006" },
@@ -23,7 +22,8 @@ public static class SeedData
         new UserAccount { Username = "moez", Password = "Moez@123", Role = "employee", DisplayName = "معز", Phone = "+216 20 000 008" },
         new UserAccount { Username = "nizar", Password = "Nizar@123", Role = "employee", DisplayName = "نزار", Phone = "+216 20 000 009" },
         new UserAccount { Username = "delegation", Password = "Delegation@2026", Role = "delegation", DisplayName = "الوفد الدبلوماسي", Phone = "" },
-    };
+        new UserAccount { Username= "Aazzeddine", Password= "Aazzeddine@123", Role= "employee", DisplayName= "عز الدين", Phone= "+216 20 000 010" },
+        };
 
     public const string AgencyLocationName = "CMAI Tunisia (Agency)";
 }

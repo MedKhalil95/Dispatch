@@ -51,6 +51,14 @@ app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(Path.Combine(app.Environment.ContentRootPath, "Static")),
     RequestPath = "/static",
+    OnPrepareResponse = ctx =>
+    {
+        // Force browsers to revalidate on every load instead of caching
+        // stale JS/CSS for who-knows-how-long — this is a small internal
+        // tool, not a CDN-fronted public site, so "always fresh" wins
+        // over the marginal performance gain of aggressive caching.
+        ctx.Context.Response.Headers["Cache-Control"] = "no-cache, must-revalidate";
+    },
 });
 
 var templatesPath = Path.Combine(app.Environment.ContentRootPath, "Templates");

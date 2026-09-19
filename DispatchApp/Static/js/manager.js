@@ -412,6 +412,19 @@ function setupTabs() {
 }
 let mapPicker = null;
 let pickerMarker = null;
+function setPickerPoint(lat, lng, panTo = false) {
+    document.getElementById("loc-lat").value = lat.toFixed(6);
+    document.getElementById("loc-lng").value = lng.toFixed(6);
+    const latlng = { lat, lng };
+    if (pickerMarker) {
+        pickerMarker.setLatLng(latlng);
+    }
+    else {
+        pickerMarker = L.marker(latlng).addTo(mapPicker);
+    }
+    if (panTo)
+        mapPicker.setView(latlng, 15);
+}
 function initMapPicker() {
     if (mapPicker) {
         mapPicker.invalidateSize();
@@ -421,16 +434,118 @@ function initMapPicker() {
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "© OpenStreetMap contributors",
     }).addTo(mapPicker);
-    mapPicker.on("click", (e) => {
-        const { lat, lng } = e.latlng;
-        document.getElementById("loc-lat").value = lat.toFixed(6);
-        document.getElementById("loc-lng").value = lng.toFixed(6);
-        if (pickerMarker) {
-            pickerMarker.setLatLng(e.latlng);
+    mapPicker.on("click", (e) => setPickerPoint(e.latlng.lat, e.latlng.lng));
+}
+let geocodeRequestSeq = 0;
+let geocodeCooldownUntil = 0;
+async function searchPlaces(query) {
+    const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=6&countrycodes=tn&q=${encodeURIComponent(query)}`;
+    const res = await fetch(url, { headers: { Accept: "application/json" } });
+    if (!res.ok)
+        throw new Error(`Search failed (${res.status})`);
+    const data = await res.json();
+    return data.map((item) => ({
+        shortName: item.name || item.display_name.split(",")[0],
+        displayName: item.display_name,
+        lat: parseFloat(item.lat),
+        lng: parseFloat(item.lon),
+    }));
+}
+function renderGeocodeResults(html) {
+    const list = document.getElementById("loc-search-results");
+    list.innerHTML = html;
+    list.classList.add("is-open");
+}
+function hideGeocodeResults() {
+    const list = document.getElementById("loc-search-results");
+    list.classList.remove("is-open");
+    list.innerHTML = "";
+}
+function applyGeocodeResult(result) {
+    const nameInput = document.getElementById("loc-name");
+    nameInput.value = result.shortName;
+    const searchInput = document.getElementById("loc-search");
+    searchInput.value = result.shortName;
+    initMapPicker();
+    setPickerPoint(result.lat, result.lng, true);
+    hideGeocodeResults();
+    nameInput.focus();
+    nameInput.select();
+}
+async function triggerLocationSearch() {
+    const input = document.getElementById("loc-search");
+    const btn = document.getElementById("loc-search-btn");
+    const query = input.value.trim();
+    if (query.length < 3) {
+        renderGeocodeResults(`<li class="no-results">${t("location_search_too_short")}</li>`);
+        return;
+    }
+    const now = Date.now();
+    if (now < geocodeCooldownUntil) {
+        renderGeocodeResults(`<li class="no-results">${t("location_search_wait")}</li>`);
+        return;
+    }
+    renderGeocodeResults(`<li class="is-loading">${t("location_search_searching")}</li>`);
+    btn.disabled = true;
+    const mySeq = ++geocodeRequestSeq;
+    try {
+        const results = await searchPlaces(query);
+        geocodeCooldownUntil = Date.now() + 1100;
+        if (mySeq !== geocodeRequestSeq)
+            return;
+        if (results.length === 0) {
+            renderGeocodeResults(`<li class="no-results">${t("location_search_no_results")}</li>`);
+            return;
         }
-        else {
-            pickerMarker = L.marker(e.latlng).addTo(mapPicker);
+        const html = results
+            .map((r, i) => `
+        <li data-index="${i}">
+          <span class="result-name">${escapeHtml(r.shortName)}</span>
+          <span class="result-detail">${escapeHtml(r.displayName)}</span>
+        </li>`)
+            .join("");
+        renderGeocodeResults(html);
+        const list = document.getElementById("loc-search-results");
+        list.querySelectorAll("li[data-index]").forEach((li) => {
+            li.addEventListener("click", () => applyGeocodeResult(results[Number(li.dataset.index)]));
+        });
+    }
+    catch {
+        geocodeCooldownUntil = Date.now() + 1100;
+        if (mySeq !== geocodeRequestSeq)
+            return;
+        renderGeocodeResults(`<li class="no-results">${t("location_search_failed")}</li>`);
+    }
+    finally {
+        btn.disabled = false;
+    }
+}
+function setupLocationSearch() {
+    const input = document.getElementById("loc-search");
+    const btn = document.getElementById("loc-search-btn");
+    btn.addEventListener("click", () => triggerLocationSearch());
+    input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            triggerLocationSearch();
         }
+        else if (e.key === "Escape") {
+            hideGeocodeResults();
+        }
+    });
+    document.addEventListener("click", (e) => {
+        const wrap = document.querySelector(".location-search");
+        if (wrap && !wrap.contains(e.target))
+            hideGeocodeResults();
+    });
+}
+function setupCantFindLocationLink() {
+    const btn = document.getElementById("cant-find-location-btn");
+    btn === null || btn === void 0 ? void 0 : btn.addEventListener("click", () => {
+        var _a;
+        const locationsTabBtn = document.querySelector('.tab-btn[data-tab="locations"]');
+        locationsTabBtn === null || locationsTabBtn === void 0 ? void 0 : locationsTabBtn.click();
+        (_a = document.getElementById("loc-search")) === null || _a === void 0 ? void 0 : _a.focus();
     });
 }
 function setupLocationForm() {
@@ -455,6 +570,8 @@ function setupLocationForm() {
             document.getElementById("loc-name").value = "";
             document.getElementById("loc-lat").value = "";
             document.getElementById("loc-lng").value = "";
+            document.getElementById("loc-search").value = "";
+            hideGeocodeResults();
             if (pickerMarker) {
                 mapPicker.removeLayer(pickerMarker);
                 pickerMarker = null;
@@ -470,6 +587,8 @@ async function initManager() {
     setupForm();
     setupTabs();
     setupLocationForm();
+    setupLocationSearch();
+    setupCantFindLocationLink();
     setupPickModeButtons();
     initLiveMap();
     const timeInput = document.getElementById("f-time");

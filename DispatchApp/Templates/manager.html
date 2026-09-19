@@ -77,6 +77,8 @@
             </div>
           </div>
 
+          <button type="button" class="link-btn" id="cant-find-location-btn" data-i18n="cant_find_location">Can't find the place you need? Search &amp; add it</button>
+
           <div class="field-row">
             <div class="field">
               <label for="f-date" data-i18n="date_label">Date</label>
@@ -129,6 +131,16 @@
     <div class="manager-grid">
       <div class="panel">
         <h2 data-i18n="locations_add_heading">Add a location</h2>
+
+        <div class="field location-search">
+          <label for="loc-search" data-i18n="location_search_label">Search by name (finds the GPS position for you)</label>
+          <div class="location-search-row">
+            <input id="loc-search" type="text" autocomplete="off" data-i18n-placeholder="location_search_placeholder" placeholder="e.g. The Residence Tunis">
+            <button type="button" class="location-search-btn" id="loc-search-btn" data-i18n="location_search_button">Search</button>
+          </div>
+          <ul class="location-search-results" id="loc-search-results"></ul>
+        </div>
+
         <div id="map-picker"></div>
         <div class="field">
           <label for="loc-name" data-i18n="name_label">Name</label>
