@@ -15,12 +15,21 @@ public static class SeedData
     // addresses.
     public static readonly List<(string Name, double Lat, double Lng)> DefaultLocations = new()
     {
-        (AgencyLocationName, 36.8065, 10.1815),
-        ("Tunis-Carthage Airport", 36.8510, 10.2272),
-        ("Golden Tulip Gammarth Hotel", 36.9097, 10.2867),
-        ("Radisson Blu Hotel Tunis", 36.9195, 10.2895),
-        ("Africa Hotel Tunis", 36.7995, 10.1815),
-        ("Laico Tunis Hotel", 36.8020, 10.1790),
-        ("Movenpick Hotel Gammarth", 36.9230, 10.2915),
+        (AgencyLocationName, 36.833167837466156, 10.242287753330718),
+        ("Tunis-Carthage Airport", 36.85111, 10.22722),
+        ("Golden Tulip Gammarth Hotel", 36.90548980019178, 10.312485782517482),
+        ("Africa Hotel Tunis", 36.799551272935744, 10.183197196004256),
+        ("Laico Tunis Hotel", 36.807488982176906, 10.187109669021018),
+        ("Movenpick Hotel Gammarth", 36.89498655633526, 10.321018497861173),
+        ("Movenpick Hotel du Lac Tunis", 36.83549841997933, 10.248399453678092),
+        ("Hotel Concorde Les Berges du Lac", 36.83219749457435, 10.236725909497638),
+        ("Sheraton Tunis Hotel", 36.818611, 10.203611),
+        ("Novotel Tunis", 36.845159782675545, 10.280738464957478),
+        ("Hotel Carlton", 36.818611, 10.203611),
+        ("Hotel Belvedere Fourati", 36.818611, 10.203611),
+        ("Hotel Royal Victoria", 36.818611, 10.203611),
+        ("Hotel Majestic", 36.818611, 10.203611),
+        ("Hotel La Kasbah", 36.818611, 10.203611),
+        ("Hotel El Mouradi Gammarth", 36.921422345030656, 10.288286196009999),
     };
 }

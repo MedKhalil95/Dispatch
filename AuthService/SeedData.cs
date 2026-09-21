@@ -14,7 +14,7 @@ public static class SeedData
     {
         new UserAccount { Username = "manager", Password = "Manager@2026", Role = "manager", DisplayName = "المدير", Phone = "" },
         new UserAccount { Username = "hossam", Password = "Hossam@123", Role = "employee", DisplayName = "حسام", Phone = "+216 20 000 001" },
-        new UserAccount { Username = "mohamed", Password = "Mohamed@123", Role = "employee", DisplayName = "محمد", Phone = "+216 20 000 002" },
+        new UserAccount { Username = "issam", Password = "issaù@123", Role = "employee", DisplayName = "عصام", Phone = "+216 20 000 002" },
         new UserAccount { Username = "wajdi", Password = "Wajdi@123", Role = "employee", DisplayName = "وجدي", Phone = "+216 20 000 004" },
         new UserAccount { Username = "sadok", Password = "Sadok@123", Role = "employee", DisplayName = "الصادق", Phone = "+216 20 000 005" },
         new UserAccount { Username = "belgacem", Password = "Belgacem@123", Role = "employee", DisplayName = "بلڤاسم", Phone = "+216 20 000 006" },
